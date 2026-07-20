@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#3b82f6" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<title>我的日记本</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --ink:#1f2329; --sub:#6b7280;
+    --line:#e5e7eb; --brand:#3b82f6; --brand-soft:#eaf2ff;
+    --life:#10b981; --invest:#f59e0b; --work:#2563eb; --other:#6b7280;
+    --danger:#ef4444; --radius:14px; --shadow:0 1px 3px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); -webkit-text-size-adjust:100%}
+  header{position:sticky; top:0; z-index:20; background:rgba(255,255,255,.92); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; padding:10px 16px; flex-wrap:wrap}
+  header h1{font-size:17px; margin:0; font-weight:700}
+  header .date{color:var(--sub); font-size:13px}
+  header .spacer{flex:1}
+  .btn{border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:8px 14px;
+    border-radius:10px; font-size:14px; cursor:pointer; transition:.15s; white-space:nowrap}
+  .btn:hover{border-color:var(--brand); color:var(--brand)}
+  .btn.primary{background:var(--brand); border-color:var(--brand); color:#fff}
+  .btn.primary:hover{filter:brightness(1.05); color:#fff}
+  .btn.danger{color:var(--danger); border-color:#f3c0c0}
+  .btn.danger:hover{background:#fff0f0; border-color:var(--danger)}
+  .btn.small{padding:5px 10px; font-size:13px}
+  .btn[disabled]{opacity:.5; cursor:not-allowed}
+  .layout{display:grid; grid-template-columns:360px 1fr; gap:16px; padding:16px; max-width:1180px; margin:0 auto; align-items:start}
+  @media (max-width:860px){ .layout{grid-template-columns:1fr} }
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+  .side{padding:12px}
+  .filters{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px}
+  .chip{border:1px solid var(--line); background:#fff; color:var(--sub); padding:5px 11px; border-radius:999px; font-size:13px; cursor:pointer}
+  .chip.on{background:var(--brand-soft); border-color:var(--brand); color:var(--brand); font-weight:600}
+  .search{flex:1; min-width:140px; border:1px solid var(--line); border-radius:10px; padding:8px 12px; font-size:14px; outline:none}
+  .search:focus{border-color:var(--brand)}
+  .cal{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin:10px 0}
+  .cal .wd{font-size:11px; color:var(--sub); text-align:center}
+  .cal .day{aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:13px; border-radius:8px; cursor:pointer; position:relative}
+  .cal .day.has{background:var(--brand-soft); color:var(--brand); font-weight:600}
+  .cal .day.sel{outline:2px solid var(--brand)}
+  .cal .day.blank{}
+  .list{margin-top:8px; max-height:62vh; overflow:auto}
+  .entry{border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; cursor:pointer; transition:.15s}
+  .entry:hover{border-color:var(--brand); box-shadow:var(--shadow)}
+  .entry .top{display:flex; align-items:center; gap:8px; margin-bottom:4px}
+  .entry .d{font-size:12px; color:var(--sub)}
+  .badge{font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600}
+  .badge.life{background:#e7f8f1; color:var(--life)}
+  .badge.invest{background:#fef3e2; color:var(--invest)}
+  .badge.work{background:#e7f0ff; color:var(--work)}
+  .badge.other{background:#f1f3f5; color:var(--other)}
+  .entry .ttl{font-weight:600; font-size:15px; margin:2px 0}
+  .entry .body{font-size:13px; color:#374151; max-height:48px; overflow:hidden; line-height:1.5}
+  .entry .meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; align-items:center}
+  .tag{font-size:11px; background:#f1f3f5; color:#495057; padding:2px 8px; border-radius:999px}
+  .loc{font-size:12px; color:var(--sub)}
+  .thumbs{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap}
+  .thumbs img,.thumbs .aud{width:56px; height:56px; border-radius:8px; object-fit:cover; border:1px solid var(--line); background:#f3f4f6}
+  .thumbs .aud{display:flex; align-items:center; justify-content:center; font-size:22px}
+  .empty{color:var(--sub); text-align:center; padding:30px 10px; font-size:14px}
+  .editor{padding:18px}
+  .editor h2{margin:0 0 14px; font-size:18px}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:13px; color:var(--sub); margin-bottom:6px; font-weight:600}
+  .row{display:flex; gap:10px; flex-wrap:wrap}
+  .row > *{flex:1; min-width:120px}
+  input[type=text],input[type=date],textarea,select{width:100%; border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; font-size:14px; font-family:inherit; outline:none; background:#fff; color:var(--ink)}
+  input:focus,textarea:focus,select:focus{border-color:var(--brand)}
+  textarea{min-height:150px; resize:vertical; line-height:1.6}
+  .type-toggle{display:flex; gap:8px; flex-wrap:wrap}
+  .type-toggle .opt{flex:1; min-width:72px; text-align:center; padding:10px 4px; border:1px solid var(--line); border-radius:10px; cursor:pointer; font-weight:600; color:var(--sub)}
+  .type-toggle .opt.on.life{background:#e7f8f1; color:var(--life); border-color:#9fe3c7}
+  .type-toggle .opt.on.invest{background:#fef3e2; color:var(--invest); border-color:#fbd79b}
+  .type-toggle .opt.on.work{background:#e7f0ff; color:var(--work); border-color:#a9c5ff}
+  .type-toggle .opt.on.other{background:#f1f3f5; color:var(--other); border-color:#d4d8de}
+  .upload-grid{display:flex; gap:10px; flex-wrap:wrap}
+  .preview{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .preview .item{position:relative; width:72px; height:72px; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#f3f4f6}
+  .preview .item img{width:100%; height:100%; object-fit:cover}
+  .preview .item .aud{width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:26px}
+  .preview .item .doc{width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px; box-sizing:border-box; text-align:center}
+  .preview .item .doc .ico{font-size:24px}
+  .preview .item .doc .nm{font-size:9px; color:var(--sub); margin-top:2px; word-break:break-all; line-height:1.1; max-height:28px; overflow:hidden}
+  .preview .item audio{width:100%; height:100%}
+  .hint{font-size:12px; color:var(--sub); margin-top:6px; line-height:1.5}
+  .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:8px; flex-wrap:wrap}
+  .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#1f2329; color:#fff; padding:10px 18px; border-radius:10px; font-size:14px; z-index:99; opacity:0; transition:.25s; pointer-events:none; max-width:90vw}
+  .toast.show{opacity:1}
+  .modal{position:fixed; inset:0; z-index:80; background:rgba(15,23,42,.45); display:none; align-items:flex-start; justify-content:center; padding:24px 12px; overflow:auto}
+  .modal.show{display:flex}
+  .modal .card{background:var(--panel); border-radius:16px; box-shadow:var(--shadow); width:100%; max-width:720px; padding:20px; margin:auto}
+  .modal .card h2{margin:0 0 4px; font-size:19px}
+  .modal .card .sub{color:var(--sub); font-size:13px; margin-bottom:16px}
+  .modal .close{float:right; border:none; background:#f1f3f5; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:16px}
+  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:10px; margin-bottom:18px}
+  .stat{background:var(--brand-soft); border-radius:12px; padding:12px; text-align:center}
+  .stat .n{font-size:22px; font-weight:800; color:var(--brand)}
+  .stat .l{font-size:12px; color:var(--sub); margin-top:2px}
+  .rv-sec{margin-bottom:16px}
+  .rv-sec h3{font-size:14px; margin:0 0 8px; color:var(--ink)}
+  .bar-row{display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px}
+  .bar-row .name{width:44px; color:var(--sub)}
+  .bar-row .bar{height:16px; border-radius:6px; background:var(--brand)}
+  .bar-row .val{color:var(--sub); font-size:12px}
+  .mon-item{border-left:3px solid var(--brand); padding:2px 0 2px 12px; margin-bottom:10px}
+  .mon-item .mh{font-weight:700; font-size:14px; margin-bottom:2px}
+  .mon-item .ml{font-size:12px; color:var(--sub)}
+  .backup-bar{display:flex; gap:8px; flex-wrap:wrap; margin-left:auto}
+  .hidden{display:none !important}
+  /* 用 label 包裹 file input，覆盖在按钮上，点按钮即点 input（华为等国产浏览器可靠触发） */
+  .file-wrap{position:relative; overflow:hidden}
+  .file-input{position:absolute; inset:0; width:100%; height:100%; opacity:0; border:0; cursor:pointer; font-size:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>📔 我的日记本</h1>
+  <span class="date" id="todayLabel"></span>
+  <span class="spacer"></span>
+  <div class="backup-bar">
+    <button class="btn small" id="reviewBtn">📖 回顾</button>
+    <button class="btn small" id="mdBtn">📦 导出可读</button>
+    <button class="btn small" id="exportBtn">⬇ 备份</button>
+    <button class="btn small" id="importBtn">⬆ 恢复</button>
+    <input type="file" id="importFile" accept="application/json" class="hidden" />
+  </div>
+  <button class="btn primary" id="newBtn">＋ 写今天</button>
+</header>
+
+<div class="layout">
+  <div class="panel side">
+    <div class="filters"><input class="search" id="search" placeholder="搜索文字 / 地点…" /></div>
+    <div class="filters">
+      <span class="chip on" data-type="">全部</span>
+      <span class="chip" data-type="life">生活</span>
+      <span class="chip" data-type="invest">投资</span>
+      <span class="chip" data-type="work">工作</span>
+      <span class="chip" data-type="other">其他</span>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="filters" id="tagFilter"></div>
+    <div class="list" id="list"></div>
+  </div>
+
+  <div class="panel editor" id="editor">
+    <h2 id="editorTitle">新建记录</h2>
+    <input type="hidden" id="editId" />
+    <div class="field">
+      <label>类型</label>
+      <div class="type-toggle">
+        <div class="opt life on" data-t="life" id="tLife">🌿 生活</div>
+        <div class="opt invest" data-t="invest" id="tInvest">📈 投资</div>
+        <div class="opt work" data-t="work" id="tWork">📋 工作</div>
+        <div class="opt other" data-t="other" id="tOther">📦 其他</div>
+      </div>
+    </div>
+    <div class="field row">
+      <div><label>日期</label><input type="date" id="fDate" /></div>
+      <div><label>标题（可选）</label><input type="text" id="fTitle" placeholder="今天发生了什么…" /></div>
+    </div>
+    <div class="field">
+      <label>内容</label>
+      <textarea id="fBody" placeholder="写点什么… 也可以用手机键盘的 🎤 麦克风直接说话输入。"></textarea>
+      <div class="hint" style="margin-top:6px">💡 <b>语音输入</b>：点上面的输入框，再点手机键盘上的 🎤 麦克风，说话即可转成文字（系统输入法自带，任何手机都支持）。</div>
+    </div>
+    <div class="field">
+      <label>照片 / 音频 / 文档</label>
+      <div class="upload-grid">
+        <label class="btn small file-wrap">🖼 选照片
+          <input type="file" id="filePhoto" accept="image/*" multiple class="file-input" />
+        </label>
+        <label class="btn small file-wrap">🎵 选音频（m4a/mp3…）
+          <input type="file" id="fileAudio" accept="audio/*" class="file-input" />
+        </label>
+        <label class="btn small file-wrap">📄 选文档
+          <input type="file" id="fileDocs" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.csv,.md,.zip" class="file-input" />
+        </label>
+      </div>
+      <div class="preview" id="preview"></div>
+    </div>
+    <div class="field">
+      <label>标签（用逗号分隔，例如：复盘, 基金）</label>
+      <input type="text" id="fTags" placeholder="复盘, 基金, 心情" />
+    </div>
+    <div class="field">
+      <label>地点</label>
+      <div class="row">
+        <input type="text" id="fLoc" placeholder="手动填写地点，或点右边获取定位" />
+        <button class="btn small" id="locBtn" style="flex:0 0 auto">📍 获取定位</button>
+      </div>
+      <div class="hint" id="locHint"></div>
+    </div>
+    <div class="actions">
+      <button class="btn danger" id="delBtn" style="margin-right:auto; display:none">删除</button>
+      <button class="btn" id="cancelBtn">取消</button>
+      <button class="btn primary" id="saveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="reviewModal">
+  <div class="card">
+    <button class="close" id="reviewClose">×</button>
+    <h2>📖 我的回顾</h2>
+    <div class="sub" id="reviewSub"></div>
+    <div id="reviewBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
